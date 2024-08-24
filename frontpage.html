@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h2>Welcome {{ username }} to the CRM</h2>
+        <a href="{{ url_for('index') }}">Logout</a>
+    </header>
+
+    <div class="sidebar">
+        <ul>
+            <li><a href="#">Clients</a></li>
+            <li><a href="#">Interactions</a></li>
+            <li><a href="#">Calendar</a></li>
+            <li><a href="#">Email</a></li>
+            <li><a href="#">Notifications</a></li>
+            <li><a href="#">Stats</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="quick-view">
+            <h3>Quick view of recent and most important data</h3>
+        </div>
+        <div class="dashboard">
+            <div class="box">
+                <h4>Task</h4>
+                <form action="/add_task" method="POST">
+                    <input type="text" name="task_name" placeholder="Add Task">
+                    <button type="submit">+ Add</button>
+                </form>
+            </div>
+            <div class="box">
+                <h4>Client</h4>
+                <form action="/add_client" method="POST">
+                    <input type="text" name="client_name" placeholder="Add Client">
+                    <button type="submit">+ Add</button>
+                </form>
+            </div>
+            <div class="box">
+                <h4>Deal</h4>
+                <form action="/add_deal" method="POST">
+                    <input type="text" name="deal_name" placeholder="Add Deal">
+                    <button type="submit">+ Add</button>
+                </form>
+            </div>
+            <div class="box">
+                <h4>Event</h4>
+                <form action="/add_event" method="POST">
+                    <input type="text" name="event_name" placeholder="Add Event">
+                    <button type="submit">+ Add</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
