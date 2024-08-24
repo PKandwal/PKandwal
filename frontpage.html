@@ -1,48 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Dashboard</title>
+    <title>CRM Application</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        body,
+        html {
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+            height: 100%;
         }
-        .header {
-            background-color: #333;
-            color: #fff;
-            padding: 10px 0;
-            text-align: center;
+
+        .logo {
+            position: absolute;
+            top: 10px;
+            left: 10px;
         }
+
+        .logo img {
+            width: 100px;
+        }
+
         .container {
             display: flex;
-            justify-content: space-between;
-            padding: 20px;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
         }
+
+        .dashboard-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            height: 90vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            box-sizing: border-box;
+            height: 60px;
+            width: 100%;
+        }
+
+        .header img {
+            height: 40px;
+        }
+
+        .header .welcome-message {
+            margin-left: 20px;
+        }
+
+        .header .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .header .user-info span {
+            margin-right: 20px;
+        }
+
+        .header .logout-button {
+            background-color: #c0392b;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .header .logout-button:hover {
+            background-color: #e74c3c;
+        }
+
+        .dashboard-container .sidebar {
+            width: 20%;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow: auto;
+        }
+
+        .dashboard-container .sidebar button {
+            background-color: #34495e;
+            color: white;
+            border: none;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .dashboard-container .sidebar button:hover {
+            background-color: #3a539b;
+        }
+
+        .dashboard-container .content {
+            width: 80%;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            margin-left: 10px;
+        }
+
         .box {
             background-color: #fff;
             padding: 20px;
-            margin: 10px;
+            margin: 10px 0;
             border-radius: 5px;
-            width: 22%;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+
         .box h3 {
             margin-top: 0;
         }
+
         .box form {
             display: flex;
             flex-direction: column;
         }
+
         .box input[type="text"] {
             padding: 10px;
             margin-bottom: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
+
         .box button {
             padding: 10px;
             background-color: #28a745;
@@ -51,16 +154,20 @@
             border-radius: 5px;
             cursor: pointer;
         }
+
         .box button:hover {
             background-color: #218838;
         }
+
         .list {
             margin-top: 20px;
         }
+
         .list ul {
             list-style-type: none;
             padding: 0;
         }
+
         .list ul li {
             background-color: #f9f9f9;
             margin: 5px 0;
@@ -70,6 +177,7 @@
             justify-content: space-between;
             align-items: center;
         }
+
         .list ul li button {
             background-color: #dc3545;
             color: white;
@@ -78,81 +186,114 @@
             cursor: pointer;
             padding: 5px 10px;
         }
+
         .list ul li button:hover {
             background-color: #c82333;
         }
     </style>
+    <script>
+        function displaySection(sectionId) {
+            document.getElementById('clients-section').style.display = 'none';
+            document.getElementById('tasks-section').style.display = 'none';
+            document.getElementById('deals-section').style.display = 'none';
+            document.getElementById('events-section').style.display = 'none';
+
+            document.getElementById(sectionId).style.display = 'block';
+        }
+    </script>
 </head>
+
 <body>
-    <div class="header">
-        <h1>CRM Dashboard</h1>
-    </div>
-    <div class="container">
-        <div class="box">
-            <h3>Add New Client</h3>
-            <form action="/add_client" method="POST">
-                <input type="text" name="client_name" placeholder="Enter client name" required>
-                <button type="submit">Add Client</button>
-            </form>
-            <div class="list">
-                <h3>Clients</h3>
-                <ul>
-                    {% for client in clients %}
-                    <li>
-                        {{ client.name }}
-                        <a href="/delete_client/{{ client.id }}">
-                            <button>Delete</button>
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
+    <div class="dashboard-container">
+        <div class="header">
+            <div class="logo"><img src="C:/Users/44798/Desktop/CSBootcamp/code/cgi.jpg" alt="CGI Logo"></div>
+            <div class="welcome-message">
+                Welcome <strong>username</strong> to the CRM
+            </div>
+            <div class="user-info">
+                <span>username</span>
+                <button class="logout-button" onclick="logout()">Logout</button>
             </div>
         </div>
-        <div class="box">
-            <h3>Add New Task</h3>
-            <form action="/add_task" method="POST">
-                <input type="text" name="task_name" placeholder="Enter task name" required>
-                <button type="submit">Add Task</button>
-            </form>
-            <div class="list">
-                <h3>Tasks</h3>
-                <ul>
-                    {% for task in tasks %}
-                    <li>{{ task.name }}</li>
-                    {% endfor %}
-                </ul>
+        <div class="container">
+            <div class="sidebar">
+                <button onclick="displaySection('clients-section')">Clients</button>
+                <button onclick="displaySection('tasks-section')">Tasks</button>
+                <button onclick="displaySection('deals-section')">Deals</button>
+                <button onclick="displaySection('events-section')">Events</button>
             </div>
-        </div>
-        <div class="box">
-            <h3>Add New Deal</h3>
-            <form action="/add_deal" method="POST">
-                <input type="text" name="deal_name" placeholder="Enter deal name" required>
-                <button type="submit">Add Deal</button>
-            </form>
-            <div class="list">
-                <h3>Deals</h3>
-                <ul>
-                    {% for deal in deals %}
-                    <li>{{ deal.name }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-        <div class="box">
-            <h3>Add New Event</h3>
-            <form action="/add_event" method="POST">
-                <input type="text" name="event_name" placeholder="Enter event name" required>
-                <button type="submit">Add Event</button>
-            </form>
-            <div class="list">
-                <h3>Events</h3>
-                <ul>
-                    {% for event in events %}
-                    <li>{{ event.name }}</li>
-                    {% endfor %}
-                </ul>
+            <div class="content">
+                <div id="clients-section" class="box">
+                    <h3>Clients</h3>
+                    <form action="/add_client" method="POST">
+                        <input type="text" name="client_name" placeholder="Enter client name" required>
+                        <button type="submit">Add Client</button>
+                    </form>
+                    <div class="list">
+                        <h3>Client List</h3>
+                        <ul>
+                            {% for client in clients %}
+                            <li>
+                                {{ client.name }}
+                                <a href="/delete_client/{{ client.id }}">
+                                    <button>Delete</button>
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="tasks-section" class="box" style="display:none;">
+                    <h3>Tasks</h3>
+                    <form action="/add_task" method="POST">
+                        <input type="text" name="task_name" placeholder="Enter task name" required>
+                        <button type="submit">Add Task</button>
+                    </form>
+                    <div class="list">
+                        <h3>Task List</h3>
+                        <ul>
+                            {% for task in tasks %}
+                            <li>{{ task.name }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="deals-section" class="box" style="display:none;">
+                    <h3>Deals</h3>
+                    <form action="/add_deal" method="POST">
+                        <input type="text" name="deal_name" placeholder="Enter deal name" required>
+                        <button type="submit">Add Deal</button>
+                    </form>
+                    <div class="list">
+                        <h3>Deal List</h3>
+                        <ul>
+                            {% for deal in deals %}
+                            <li>{{ deal.name }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="events-section" class="box" style="display:none;">
+                    <h3>Events</h3>
+                    <form action="/add_event" method="POST">
+                        <input type="text" name="event_name" placeholder="Enter event name" required>
+                        <button type="submit">Add Event</button>
+                    </form>
+                    <div class="list">
+                        <h3>Event List</h3>
+                        <ul>
+                            {% for event in events %}
+                            <li>{{ event.name }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </body>
+
 </html>
