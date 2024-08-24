@@ -4,57 +4,153 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRM Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+        }
+        .box {
+            background-color: #fff;
+            padding: 20px;
+            margin: 10px;
+            border-radius: 5px;
+            width: 22%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .box h3 {
+            margin-top: 0;
+        }
+        .box form {
+            display: flex;
+            flex-direction: column;
+        }
+        .box input[type="text"] {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .box button {
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .box button:hover {
+            background-color: #218838;
+        }
+        .list {
+            margin-top: 20px;
+        }
+        .list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .list ul li {
+            background-color: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .list ul li button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+        .list ul li button:hover {
+            background-color: #c82333;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h2>Welcome {{ username }} to the CRM</h2>
-        <a href="{{ url_for('index') }}">Logout</a>
-    </header>
-
-    <div class="sidebar">
-        <ul>
-            <li><a href="#">Clients</a></li>
-            <li><a href="#">Interactions</a></li>
-            <li><a href="#">Calendar</a></li>
-            <li><a href="#">Email</a></li>
-            <li><a href="#">Notifications</a></li>
-            <li><a href="#">Stats</a></li>
-        </ul>
+    <div class="header">
+        <h1>CRM Dashboard</h1>
     </div>
-
-    <div class="main-content">
-        <div class="quick-view">
-            <h3>Quick view of recent and most important data</h3>
+    <div class="container">
+        <div class="box">
+            <h3>Add New Client</h3>
+            <form action="/add_client" method="POST">
+                <input type="text" name="client_name" placeholder="Enter client name" required>
+                <button type="submit">Add Client</button>
+            </form>
+            <div class="list">
+                <h3>Clients</h3>
+                <ul>
+                    {% for client in clients %}
+                    <li>
+                        {{ client.name }}
+                        <a href="/delete_client/{{ client.id }}">
+                            <button>Delete</button>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
-        <div class="dashboard">
-            <div class="box">
-                <h4>Task</h4>
-                <form action="/add_task" method="POST">
-                    <input type="text" name="task_name" placeholder="Add Task">
-                    <button type="submit">+ Add</button>
-                </form>
+        <div class="box">
+            <h3>Add New Task</h3>
+            <form action="/add_task" method="POST">
+                <input type="text" name="task_name" placeholder="Enter task name" required>
+                <button type="submit">Add Task</button>
+            </form>
+            <div class="list">
+                <h3>Tasks</h3>
+                <ul>
+                    {% for task in tasks %}
+                    <li>{{ task.name }}</li>
+                    {% endfor %}
+                </ul>
             </div>
-            <div class="box">
-                <h4>Client</h4>
-                <form action="/add_client" method="POST">
-                    <input type="text" name="client_name" placeholder="Add Client">
-                    <button type="submit">+ Add</button>
-                </form>
+        </div>
+        <div class="box">
+            <h3>Add New Deal</h3>
+            <form action="/add_deal" method="POST">
+                <input type="text" name="deal_name" placeholder="Enter deal name" required>
+                <button type="submit">Add Deal</button>
+            </form>
+            <div class="list">
+                <h3>Deals</h3>
+                <ul>
+                    {% for deal in deals %}
+                    <li>{{ deal.name }}</li>
+                    {% endfor %}
+                </ul>
             </div>
-            <div class="box">
-                <h4>Deal</h4>
-                <form action="/add_deal" method="POST">
-                    <input type="text" name="deal_name" placeholder="Add Deal">
-                    <button type="submit">+ Add</button>
-                </form>
-            </div>
-            <div class="box">
-                <h4>Event</h4>
-                <form action="/add_event" method="POST">
-                    <input type="text" name="event_name" placeholder="Add Event">
-                    <button type="submit">+ Add</button>
-                </form>
+        </div>
+        <div class="box">
+            <h3>Add New Event</h3>
+            <form action="/add_event" method="POST">
+                <input type="text" name="event_name" placeholder="Enter event name" required>
+                <button type="submit">Add Event</button>
+            </form>
+            <div class="list">
+                <h3>Events</h3>
+                <ul>
+                    {% for event in events %}
+                    <li>{{ event.name }}</li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
     </div>
