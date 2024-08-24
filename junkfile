@@ -1,0 +1,46 @@
+from flask import Flask, render_template, request, redirect, url_for
+
+app = Flask(__name__)
+
+# In-memory storage for simplicity
+clients = []
+tasks = []
+deals = []
+events = []
+
+@app.route('/')
+def index():
+    return render_template('index.html', clients=clients, tasks=tasks, deals=deals, events=events)
+
+@app.route('/add_client', methods=['POST'])
+def add_client():
+    client_name = request.form['client_name']
+    clients.append(client_name)
+    return redirect(url_for('index'))
+
+@app.route('/delete_client/<string:name>', methods=['GET'])
+def delete_client(name):
+    global clients
+    clients = [client for client in clients if client != name]
+    return redirect(url_for('index'))
+
+@app.route('/add_task', methods=['POST'])
+def add_task():
+    task_name = request.form['task_name']
+    tasks.append(task_name)
+    return redirect(url_for('index'))
+
+@app.route('/add_event', methods=['POST'])
+def add_event():
+    event_name = request.form['event_name']
+    events.append(event_name)
+    return redirect(url_for('index'))
+
+@app.route('/add_deal', methods=['POST'])
+def add_deal():
+    deal_name = request.form['deal_name']
+    deals.append(deal_name)
+    return redirect(url_for('index'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
