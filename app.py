@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 # Configuring the connection to the RDS database
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')  # This should be set to your RDS endpoint
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('mydbinstance.ct6ioac42ue3.us-west-2.rds.amazonaws.com')  # This should be set to your RDS endpoint
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
