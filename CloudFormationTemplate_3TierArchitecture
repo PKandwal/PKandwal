@@ -1,0 +1,673 @@
+Description: This AWS Cloudformation template deploys a 3-tier web architecture.
+
+Parameters:
+  EnvironmentName:
+    Description: Environment name. We are using it to prefix our resources name.
+    Type: String
+    Default: 3Tier
+
+  KeyPair:
+    Description: Please enter the name of the SSH Key Pair for remote access to EC2 instances
+    Type: String
+
+  DBInstanceID:
+    Default: mydbinstance
+    Description: My database instance
+    Type: String
+
+  DBName:
+    Default: mydb
+    Description: My database
+    Type: String
+
+  DBInstanceClass:
+    Default: db.t3.micro
+    Description: DB instance class
+    Type: String
+    ConstraintDescription: Must select a valid DB instance type.
+
+  DBAllocatedStorage:
+    Default: '20'
+    Description: The size of the database (GiB)
+    Type: Number
+    MinValue: '20'
+    MaxValue: '65536'
+    ConstraintDescription: must be between 20 and 65536 GiB.
+
+  MasterUsername:
+    Description: Please enter the Master Username for the RDS Database
+    Type: String
+
+  MasterUserPassword:
+    Description: Please enter the Master Password for the RDS Database
+    Type: String
+
+
+  MyDBSubnetGroupName:
+    Description: Please enter name for RDS Database Instance Subnet Group
+    Type: String
+    Default: MyDBSubnetGroup
+
+  VpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.0.0.0/16
+
+  PublicSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet1 in the first Availability Zone.
+    Type: String
+    Default: 10.0.1.0/24
+
+  PublicSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet2 in the second Availability Zone.
+    Type: String
+    Default: 10.0.2.0/24
+
+  PrivateSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet1 in the first Availability Zone.
+    Type: String
+    Default: 10.0.10.0/24
+
+  PrivateSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet2 in the first Availability Zone.
+    Type: String
+    Default: 10.0.12.0/24
+
+  PrivateSubnet3CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet3 in the second Availability Zone.
+    Type: String
+    Default: 10.0.14.0/24
+
+  PrivateSubnet4CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet4 in the second Availability Zone.
+    Type: String
+    Default: 10.0.16.0/24
+
+  AmazonLinuxAMIID:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-VPC
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    DependsOn: VPC
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-InternetGateway
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    DependsOn: InternetGateway
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+      - 0
+      - !GetAZs ''
+      CidrBlock: !Ref PublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-Public-Web-Subnet-(AZ1)
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+      - 1
+      - !GetAZs ''
+      CidrBlock: !Ref PublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-Public-Web-Subnet-(AZ2)
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+      - 0
+      - !GetAZs ''
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-Private-App-Subnet-(AZ1)
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+      - 1
+      - !GetAZs ''
+      CidrBlock: !Ref PrivateSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-Private-App-Subnet-(AZ2)
+
+  PrivateSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+      - 0
+      - !GetAZs ''
+      CidrBlock: !Ref PrivateSubnet3CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-Private-DB-Subnet-(AZ1)
+
+  PrivateSubnet4:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+      - 1
+      - !GetAZs ''
+      CidrBlock: !Ref PrivateSubnet4CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-Private-DB-Subnet-(AZ2)
+
+  ElasticIP1:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-ElasticIP1
+
+  ElasticIP2:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-ElasticIP2
+
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    DependsOn: PublicSubnet1
+    Properties:
+      ConnectivityType: public
+      AllocationId: !GetAtt ElasticIP1.AllocationId
+      SubnetId: !GetAtt PublicSubnet1.SubnetId
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-NatGateway1
+
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    DependsOn: PublicSubnet2
+    Properties:
+      ConnectivityType: public
+      AllocationId: !GetAtt ElasticIP2.AllocationId
+      SubnetId: !GetAtt PublicSubnet2.SubnetId
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-NatGateway2
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-PublicRouteTable
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn: DefaultPublicRoute
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn: DefaultPublicRoute
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-PrivateRouteTable
+
+  DefaultPrivateRoute1:
+    Type: AWS::EC2::Route
+    DependsOn: NatGateway1
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+
+  DefaultPrivateRoute2:
+    Type: AWS::EC2::Route
+    DependsOn: NatGateway2
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway2
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn: DefaultPrivateRoute1
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet1
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn: DefaultPrivateRoute2
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet2
+
+  PrivateSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn: DefaultPrivateRoute1
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet3
+
+  PrivateSubnet4RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn: DefaultPrivateRoute2
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet4
+
+  BastionHostSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: VPC
+    Properties:
+      GroupName: !Sub ${EnvironmentName}-BastionHost-SecurityGroup
+      GroupDescription: Security group for Bastion Host
+      VpcId: !Ref VPC
+
+  BastionHostSecurityGroupSSHIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn: BastionHostSecurityGroup
+    Properties:
+      CidrIp: 0.0.0.0/0
+      Description: Allow SSH from local machine
+      GroupId: !Ref BastionHostSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+
+  InternetALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${EnvironmentName}-InternetALB-SecurityGroup
+      GroupDescription: Security group for Internet Application Load Balancer
+      VpcId: !Ref VPC
+
+  InternetALBSecurityGroupHTTPIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn: InternetALBSecurityGroup
+    Properties:
+      CidrIp: 0.0.0.0/0
+      Description: Allow HTTP from anywhere
+      GroupId: !Ref InternetALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+
+  WebTierSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: BastionHostSecurityGroup
+    Properties:
+      GroupName: !Sub ${EnvironmentName}-WebTier-SecurityGroup
+      GroupDescription: Security group for Web Tier
+      VpcId: !Ref VPC
+
+  InternetSecurityGroupHTTPIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn: InternetALBSecurityGroup
+    Properties:
+      SourceSecurityGroupId: !GetAtt InternetALBSecurityGroup.GroupId
+      Description: Allow HTTP from Internet Application Load Balancer
+      GroupId: !Ref WebTierSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+
+  WebTierSecurityGroupSSHIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn: BastionHostSecurityGroup
+    Properties:
+      SourceSecurityGroupId: !GetAtt BastionHostSecurityGroup.GroupId
+      Description: Allow SSH from Bastion Host
+      GroupId: !GetAtt WebTierSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+
+  InternalALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${EnvironmentName}-InternalALB-SecurityGroup
+      GroupDescription: Security group for Internal Application Load Balancer
+      VpcId: !Ref VPC
+
+  InternalALBSecurityGroupHTTPIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn: InternalALBSecurityGroup
+    Properties:
+      SourceSecurityGroupId: !GetAtt WebTierSecurityGroup.GroupId
+      Description: Allow HTTP from Web Tier Auto Scaling Group
+      GroupId: !Ref InternalALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+
+  AppTierSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: WebTierSecurityGroup
+    Properties:
+      GroupName: !Sub ${EnvironmentName}-AppTier-SecurityGroup
+      GroupDescription: Security group for App Tier
+      VpcId: !Ref VPC
+
+  AppTierSecurityGroupHTTPIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn: AppTierSecurityGroup
+    Properties:
+      SourceSecurityGroupId: !GetAtt InternetALBSecurityGroup.GroupId
+      Description: Allow HTTP from Internet Application Load Balancer
+      GroupId: !GetAtt AppTierSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+
+  AppTierSecurityGroupSSHIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn: AppTierSecurityGroup
+    Properties:
+      SourceSecurityGroupId: !GetAtt BastionHostSecurityGroup.GroupId
+      Description: Allow SSH from Bastion Host
+      GroupId: !GetAtt AppTierSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+
+  DBSecurityGroup:
+    Type: AWS::RDS::DBSecurityGroup
+    DependsOn: AppTierSecurityGroup
+    Properties:
+      DBSecurityGroupIngress:
+      - EC2SecurityGroupId: !GetAtt AppTierSecurityGroup.GroupId
+      - EC2SecurityGroupId: !GetAtt BastionHostSecurityGroup.GroupId
+      EC2VpcId: !Ref VPC
+      GroupDescription: Security Group for Data Tier
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-DBSecurityGroup
+
+  BastionHost:
+    Type: AWS::EC2::Instance
+    DependsOn: BastionHostSecurityGroup
+    Properties:
+      ImageId: !Ref AmazonLinuxAMIID
+      KeyName: !Ref KeyPair
+      InstanceType: t2.micro
+      NetworkInterfaces:
+      - DeviceIndex: 0
+        AssociatePublicIpAddress: true
+        SubnetId: !GetAtt PublicSubnet1.SubnetId
+        GroupSet:
+        - !GetAtt BastionHostSecurityGroup.GroupId
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName}-BastionHost
+      UserData: !Base64
+        Fn::Sub: |
+          #!/bin/bash
+          yum update -y
+          yum install -y nmap
+          yum install -y mysql
+
+  WebTierLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    DependsOn: WebTierSecurityGroup
+    Properties:
+      LaunchTemplateName: !Sub ${EnvironmentName}-WebTier-LaunchTemplate
+      LaunchTemplateData:
+        ImageId: !Ref AmazonLinuxAMIID
+        InstanceType: t2.micro
+        KeyName: !Ref KeyPair
+        NetworkInterfaces:
+        - DeviceIndex: 0
+          AssociatePublicIpAddress: true
+          Groups:
+          - !Ref WebTierSecurityGroup
+        UserData: !Base64
+          Fn::Sub: |
+            #!/bin/bash
+            yum update -y
+            yum install -y httpd
+            yum install -y nmap
+            systemctl start httpd
+            systemctl enable httpd
+            EC2AZ=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
+            echo '<center><h1>This Amazon EC2 instance is located in Availability Zone: AZID </h1></center>' > /var/www/html/index.txt
+            sed "s/AZID/$EC2AZ/" /var/www/html/index.txt > /var/www/html/index.html
+            aws s3 cp s3://<YOUR S3 BUCKET NAME GOES HERE> /var/www/html --recursive
+
+  InternetApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Name: !Sub ${EnvironmentName}-Internet-ALB
+      Type: application
+      IpAddressType: ipv4
+      Scheme: internet-facing
+      SecurityGroups:
+      - !GetAtt InternetALBSecurityGroup.GroupId
+      Subnets:
+      - !Ref PublicSubnet1
+      - !Ref PublicSubnet2
+
+  WebTierTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${EnvironmentName}-WebTier-TargetGroup
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      Port: 80
+      Protocol: HTTP
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 2
+      TargetType: instance
+      Matcher:
+        HttpCode: '200'
+      VpcId: !Ref VPC
+
+  WebTierHTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    DependsOn: WebTierTargetGroup
+    Properties:
+      LoadBalancerArn: !Ref InternetApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref WebTierTargetGroup
+
+  WebAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn: WebTierLaunchTemplate
+    Properties:
+      AutoScalingGroupName: !Sub ${EnvironmentName}-WebTier-ASG
+      DesiredCapacity: 2
+      MinSize: 2
+      MaxSize: 3
+      LaunchTemplate:
+        LaunchTemplateId: !Ref WebTierLaunchTemplate
+        Version: !GetAtt WebTierLaunchTemplate.LatestVersionNumber
+      TargetGroupARNs:
+      - !Ref WebTierTargetGroup
+      VPCZoneIdentifier:
+      - !Ref PublicSubnet1
+      - !Ref PublicSubnet2
+
+  AppTierLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    DependsOn: AppTierSecurityGroup
+    Properties:
+      LaunchTemplateName: !Sub ${EnvironmentName}-AppTier-LaunchTemplate
+      LaunchTemplateData:
+        ImageId: !Ref AmazonLinuxAMIID
+        InstanceType: t2.micro
+        KeyName: !Ref KeyPair
+        NetworkInterfaces:
+        - DeviceIndex: 0
+          AssociatePublicIpAddress: false
+          Groups:
+          - !Ref AppTierSecurityGroup
+        UserData: !Base64
+          Fn::Sub: |
+            #!/bin/bash
+            yum update -y
+            yum install -y httpd
+            yum install -y nmap
+            yum install -y mysql
+            systemctl start httpd
+            systemctl enable httpd
+            echo '<center><h1>This is the Application tier! </h1></center>' > /var/www/html/index.html
+            aws s3 cp s3://<YOUR S3 BUCKET NAME GOES HERE> /var/www/html --recursive
+
+  InternalApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DependsOn: InternalALBSecurityGroup
+    Properties:
+      Name: !Sub ${EnvironmentName}-Internal-ALB
+      Type: application
+      IpAddressType: ipv4
+      Scheme: internal
+      SecurityGroups:
+      - !GetAtt InternalALBSecurityGroup.GroupId
+      Subnets:
+      - !Ref PrivateSubnet1
+      - !Ref PrivateSubnet2
+
+  AppTierTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${EnvironmentName}-AppTier-TargetGroup
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      Port: 80
+      Protocol: HTTP
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 2
+      TargetType: instance
+      Matcher:
+        HttpCode: '200'
+      VpcId: !Ref VPC
+
+  AppTierHTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    DependsOn: AppTierTargetGroup
+    Properties:
+      LoadBalancerArn: !Ref InternalApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref AppTierTargetGroup
+
+  AppAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn: AppTierLaunchTemplate
+    Properties:
+      AutoScalingGroupName: !Sub ${EnvironmentName}-AppTier-ASG
+      DesiredCapacity: 2
+      MinSize: 2
+      MaxSize: 3
+      LaunchTemplate:
+        LaunchTemplateId: !Ref AppTierLaunchTemplate
+        Version: !GetAtt AppTierLaunchTemplate.LatestVersionNumber
+      TargetGroupARNs:
+      - !Ref AppTierTargetGroup
+      VPCZoneIdentifier:
+      - !Ref PrivateSubnet1
+      - !Ref PrivateSubnet2
+
+  MyDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnets for MySQL RDS Instances
+      DBSubnetGroupName: !Ref MyDBSubnetGroupName
+      SubnetIds:
+      - !GetAtt PrivateSubnet3.SubnetId
+      - !GetAtt PrivateSubnet4.SubnetId
+
+  MyDB:
+    Type: 'AWS::RDS::DBInstance'
+    DependsOn: MyDBSubnetGroup
+    Properties:
+      DBInstanceIdentifier: !Ref DBInstanceID
+      DBSecurityGroups:
+      - !Ref DBSecurityGroup
+      DBSubnetGroupName: !Ref MyDBSubnetGroup
+      DBName: !Ref DBName
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: !Ref DBAllocatedStorage
+      Engine: MySQL
+      EngineVersion: "8.0.33"
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Ref MasterUserPassword
+      MultiAZ: true
+
+Outputs:
+  BastionHostPIP:
+    Description: The Public IP Address of the Bastion Host
+    Value: !GetAtt BastionHost.PublicIp
+  InternetApplicationLoadBalancerURL:
+    Description: The URL of the Internet Application Load Balancer
+    Value: !GetAtt InternetApplicationLoadBalancer.DNSName
+  InternalLoadBalancerURL:
+    Description: The URL of the Internal Application Load Balancer
+    Value: !GetAtt InternalApplicationLoadBalancer.DNSName
+  MyDBEndpointAddress:
+    Description: The FQDN of the MySQL Database
+    Value: !GetAtt MyDB.Endpoint.Address
+  MyDBPort:
+    Description: The TCP port of the MySQL Database
+    Value: !GetAtt MyDB.Endpoint.Port
